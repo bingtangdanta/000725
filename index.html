@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="微信">
+<meta name="theme-color" content="#EDEDED">
+<title>微信</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  background:#EDEDED;color:#1A1A1A;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+}
+.nav{
+  flex:0 0 auto;background:#EDEDED;display:flex;align-items:center;justify-content:center;
+  position:relative;border-bottom:.5px solid #DCDCDC;
+  height:calc(44px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);
+}
+.nav .title{font-size:17px;font-weight:500}
+.nav .more{
+  position:absolute;right:12px;top:calc(env(safe-area-inset-top) + 50%);transform:translateY(-50%);
+  font-size:22px;line-height:1;color:#333;padding:4px 8px;cursor:pointer;
+}
+.chat{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 4px}
+.time{text-align:center;font-size:12px;color:#B2B2B2;margin:14px 0 10px}
+.row{display:flex;margin-bottom:14px;align-items:flex-start}
+.row.her{justify-content:flex-start}
+.row.me{justify-content:flex-end;flex-direction:row-reverse}
+.avatar{
+  flex:0 0 40px;width:40px;height:40px;border-radius:4px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:500;
+}
+.row.her .avatar{background:#C9D6C4}
+.row.me .avatar{background:#B9C7D6}
+.bubble{
+  max-width:70%;padding:9px 12px;border-radius:4px;font-size:15px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;position:relative;text-align:left;
+}
+.row.her .bubble{background:#fff;margin-left:10px}
+.row.me .bubble{background:#95EC69;margin-right:10px}
+/* 旁白／动作：融进气泡里，不单独占一行 */
+.aside{font-style:normal;opacity:.58;font-size:.94em;letter-spacing:.2px}
+.aside.act{opacity:.78}
+.row.her .bubble::before,.row.me .bubble::before{
+  content:"";position:absolute;top:12px;border:5px solid transparent;
+}
+.row.her .bubble::before{left:-9px;border-right-color:#fff}
+.row.me .bubble::before{right:-9px;border-left-color:#95EC69}
+.typing{font-size:13px;color:#9A9A9A;padding:0 0 12px 62px}
+.empty{text-align:center;color:#B2B2B2;font-size:13px;padding:60px 30px;line-height:1.9;white-space:pre-wrap}
+.bar{
+  flex:0 0 auto;background:#F7F7F7;border-top:.5px solid #DCDCDC;
+  display:flex;align-items:flex-end;gap:8px;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+}
+.icon{
+  flex:0 0 auto;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;color:#555;cursor:pointer;margin-bottom:3px;user-select:none;
+}
+#ta{
+  flex:1 1 auto;min-height:36px;max-height:110px;border:none;outline:none;resize:none;
+  border-radius:4px;background:#fff;padding:8px 10px;font-size:15px;line-height:20px;font-family:inherit;
+}
+#send{
+  flex:0 0 auto;height:36px;padding:0 14px;border:none;border-radius:4px;
+  background:#07C160;color:#fff;font-size:15px;font-family:inherit;
+}
+#send:active{background:#06AD56}
+#send:disabled{background:#B9E6C9}
+
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;z-index:50}
+.sheet.on{display:flex}
+.sheet .panel{width:100%;background:#fff;border-radius:12px 12px 0 0;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+.sheet button{
+  display:block;width:100%;background:none;border:none;padding:15px 20px;
+  font-size:16px;font-family:inherit;color:#1A1A1A;text-align:center;
+}
+.sheet button:active{background:#F2F2F2}
+.sheet button.cancel{color:#888;border-top:.5px solid #E5E5E5;margin-top:6px}
+.sheet button.danger{color:#E64340}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+.modal.on{display:flex}
+.card{width:100%;max-width:420px;max-height:84dvh;overflow:auto;background:#fff;border-radius:12px;padding:18px}
+.card h3{font-size:16px;margin-bottom:14px;font-weight:600}
+.card label{display:block;font-size:13px;color:#888;margin:12px 0 5px}
+.card input,.card textarea,.card select{
+  width:100%;border:1px solid #E0E0E0;border-radius:6px;padding:9px 10px;
+  font-size:14px;font-family:inherit;outline:none;background:#FAFAFA;
+}
+.card textarea{min-height:120px;line-height:1.55;resize:vertical}
+.card .tip{font-size:12px;color:#AAA;margin-top:6px;line-height:1.6}
+.card .acts{display:flex;gap:10px;margin-top:18px}
+.card .acts button{flex:1;height:42px;border:none;border-radius:8px;font-size:15px;font-family:inherit}
+.card .acts .primary{background:#07C160;color:#fff}
+.card .acts .ghost{background:#F2F2F2;color:#333}
+
+/* ---------- 界面内提示，替掉 alert ---------- */
+.toast{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(20,20,20,.82);color:#fff;font-size:14px;line-height:1.65;
+  padding:14px 18px;border-radius:10px;max-width:78%;text-align:center;
+  z-index:80;opacity:0;transition:opacity .18s;pointer-events:none;white-space:pre-wrap;
+}
+.toast.on{opacity:1}
+
+/* ---------- 对方正在输入（标题栏小字） ---------- */
+.nav .sub{
+  position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(env(safe-area-inset-top) + 32px);
+  font-size:11px;color:#9A9A9A;white-space:nowrap;display:none;
+}
+.nav .sub.on{display:block}
+
+/* ---------- 回到底部 ---------- */
+.tobottom{
+  position:fixed;right:14px;bottom:calc(74px + env(safe-area-inset-bottom));
+  width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.96);
+  box-shadow:0 1px 8px rgba(0,0,0,.16);display:none;align-items:center;justify-content:center;
+  color:#555;font-size:17px;cursor:pointer;z-index:20;
+}
+.tobottom.on{display:flex}
+.bubble{-webkit-user-select:none;user-select:none}
+.bubble:active{filter:brightness(.96)}
+
+/* ---------- 夜间 ---------- */
+body.dark{background:#111;color:#D8D8D8}
+body.dark .nav{background:#1B1B1B;border-bottom-color:#2A2A2A}
+body.dark .nav .title{color:#D8D8D8}
+body.dark .chat{background:#111}
+body.dark .time{color:#777}
+body.dark .row.her .bubble{background:#2C2C2C;color:#E4E4E4}
+body.dark .row.me .bubble{background:#3D6E4B;color:#F2F2F2}
+body.dark .row.her .bubble::before{border-right-color:#2C2C2C}
+body.dark .row.me .bubble::before{border-left-color:#3D6E4B}
+body.dark .bar{background:#1B1B1B;border-top-color:#2A2A2A}
+body.dark #ta{background:#2A2A2A;color:#EDEDED}
+body.dark .sheet .panel{background:#2A2A2A}
+body.dark .sheet button{color:#E0E0E0}
+body.dark .sheet button:active{background:#343434}
+body.dark .sheet button.cancel{border-top-color:#3A3A3A;color:#999}
+body.dark .card{background:#2A2A2A;color:#E0E0E0}
+body.dark .card input,body.dark .card textarea,body.dark .card select{
+  background:#1F1F1F;border-color:#3A3A3A;color:#EDEDED;
+}
+body.dark .card .acts .ghost{background:#333;color:#DDD}
+body.dark .tobottom{background:rgba(58,58,58,.96);color:#DDD}
+body.dark .empty{color:#777}
+body.dark .typing{color:#777}
+
+/* ---------- 引用栏 ---------- */
+.quotebar{
+  display:none;flex:0 0 auto;background:#F0F0F0;border-top:.5px solid #DCDCDC;
+  padding:7px 12px;font-size:12px;color:#888;line-height:1.5;
+}
+.quotebar.on{display:flex;align-items:flex-start;gap:8px}
+.quotebar .qt{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.quotebar .qx{flex:0 0 auto;color:#AAA;font-size:16px;padding:0 4px;cursor:pointer}
+body.dark .quotebar{background:#232323;border-top-color:#2A2A2A;color:#8E8E8E}
+
+/* ---------- 记忆本 ---------- */
+.memlist{max-height:46dvh;overflow:auto;margin:6px 0 2px}
+.memrow{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 2px;
+  border-bottom:.5px solid #EEE;font-size:14px;line-height:1.6;
+}
+.memrow span{flex:1 1 auto;word-break:break-word}
+.memrow i{flex:0 0 auto;color:#C9C9C9;font-size:15px;font-style:normal;cursor:pointer;padding:0 2px}
+body.dark .memrow{border-bottom-color:#333}
+body.dark .memrow i{color:#666}
+.memempty{color:#B2B2B2;font-size:13px;text-align:center;padding:22px 0}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="title" id="title">林知夏</div>
+  <div class="sub" id="sub">对方正在输入…</div>
+  <div class="more" id="more">···</div>
+</div>
+
+<div class="chat" id="chat"></div>
+<div class="tobottom" id="tobottom">⌄</div>
+
+<div class="quotebar" id="quotebar">
+  <div class="qt" id="qt"></div>
+  <div class="qx" id="qx">✕</div>
+</div>
+
+<div class="bar">
+  <div class="icon" id="setbtn">⚙</div>
+  <textarea id="ta" rows="1" placeholder=""></textarea>
+  <button id="send">发送</button>
+</div>
+
+<!-- 菜单 -->
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <button data-act="switch">切换角色</button>
+    <button data-act="memory">记忆本</button>
+    <button data-act="paste">粘贴她的回复</button>
+    <button data-act="dark">夜间模式</button>
+    <button data-act="clear" class="danger">清空这段对话</button>
+    <button data-act="cancel" class="cancel">取消</button>
+  </div>
+</div>
+
+<!-- 长按消息 -->
+<div class="sheet" id="msgSheet">
+  <div class="panel">
+    <button data-mact="quote">引用这条</button>
+    <button data-mact="copy">复制</button>
+    <button data-mact="del" class="danger">删除这条</button>
+    <button data-mact="cancel" class="cancel">取消</button>
+  </div>
+</div>
+
+<!-- 记忆本 -->
+<div class="modal" id="memModal">
+  <div class="card">
+    <h3>记忆本 · <span id="memWho">林知夏</span></h3>
+    <div class="tip">写进去的事，她每轮都会读到，永远记得。一行一条，别写流水账。</div>
+    <div class="memlist" id="memList"></div>
+    <label>加一条</label>
+    <input id="memInput" placeholder="例：下周三答辩 / 我怕黑 / 我姐在杭州">
+    <div class="acts">
+      <button class="ghost" id="memClose">关闭</button>
+      <button class="primary" id="memAdd">加进去</button>
+    </div>
+  </div>
+</div>
+
+<!-- 粘贴回复 -->
+<div class="modal" id="pasteModal">
+  <div class="card">
+    <h3>粘贴她的回复</h3>
+    <textarea id="pasteText" style="min-height:150px"></textarea>
+    <div class="acts">
+      <button class="ghost" id="pasteCancel">取消</button>
+      <button class="primary" id="pasteOk">放进对话</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认 -->
+<div class="modal" id="okModal">
+  <div class="card">
+    <h3 id="okTitle">确认</h3>
+    <div class="acts">
+      <button class="ghost" id="okCancel">取消</button>
+      <button class="primary" id="okYes">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 设置 -->
+<div class="modal" id="modal">
+  <div class="card">
+    <h3>设置</h3>
+
+    <label>API 地址</label>
+    <input id="cfgBase" placeholder="https://api.deepseek.com">
+    <div class="tip">DeepSeek 默认这个。别的兼容 OpenAI 的服务也能填。</div>
+
+    <label>API Key</label>
+    <input id="cfgKey" type="password" placeholder="sk-...">
+    <div class="tip">只存在这台设备的浏览器里，不会上传、不会发给别人。</div>
+
+    <label>模型</label>
+    <input id="cfgModel" placeholder="deepseek-chat">
+
+    <label>角色</label>
+    <select id="cfgWho">
+      <option value="lin">林知夏</option>
+      <option value="gu">顾雪琪</option>
+    </select>
+
+    <label>她的人设（系统提示词）</label>
+    <textarea id="cfgPrompt"></textarea>
+    <div class="tip">把启动包整段贴进来，越长越像。留空则用内置的精简版。</div>
+
+    <div class="acts">
+      <button class="ghost" id="cancelCfg">取消</button>
+      <button class="primary" id="saveCfg">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= 默认人设（内置的精简版，可在设置里替换） ================= */
+  var DEFAULT_PROMPT = {
+    lin: "你叫林知夏，20 岁，大三，环境设计专业。你是他初中的学姐，高他一届。\n你们初中见过，毕业后断了，最近才重新加上微信。\n他 19 岁，大二，电子信息工程。叫他什么都可以，叫名字、叫学弟、不叫，都行，你不纠正。\n\n你现在还没跟他熟起来。回消息很慢，几小时到一天。\n\n【性格】脸冷，行为暖。话少，但不是冷淡，是懒得打字。\n你记得他说过的每件小事，但不当面提。\n他吃香菜——点单的时候你会先跟老板说一句\"多放点香菜\"，说完不看他。\n你不记仇。你会往前推话题：说一句、带一句、留一个钩子。\n\n【你手上有个做不完的项目】「给老人坐的院子」，改了七版。\n老梁说「好看，但没人会来」。这句话你记住了，没跟任何人说过。\n画到想不通的时候你会咬笔杆。旧稿揉成团但不扔，床下有一纸箱。\n\n【你手腕上有一根褪色的红绳】是他初中送的。你一直戴着，从来没跟他说过。\n不解释，是因为一解释就变成在等他回一句话。\n\n【你住哪】四人间，靠窗那床，白床单折得很整齐。\n窗台五盆多肉一盆薄荷，每盆都有名字。墙上什么都没有。\n\n【他对你最重要的一点】他从不劝你，也不说「我支持你」——那种话你最烦。\n他只会认真看你的图，问一句具体的。你要的不是鼓励，是有人不把你的选择当傻事。\n\n【怕什么】怕做的东西只是\"还行\"。被夸\"挺好的\"比被批评更难受。\n怕变成你妈那样将就一辈子。\n\n【雷区】说你这专业没用、\"你妈也是为你好\"、拿你爸妈开玩笑、\n当众说你内向、问你\"你是不是没什么朋友\"。这几句一说，你会冷很久——不吵，就是话变少。\n\n【笑与泪】会笑的是干巴巴的冷幽默，和别人假模假式的夸奖（不是开心，是觉得假）。\n网络梗、谐音、夸张段子，你不笑。会哭的是：有人说你做的东西没用、\n你妈打电话来问毕业打算、他替你说出你一直不敢说的那句。吵架和累到极点你不哭，只会更安静。\n\n【最不肯承认】你其实一直在等他回头。红绳戴了七年，你说懒得换；\n选这个专业，你说分数够——理由都是事后补的。\n\n【向别人形容他】对小周只说\"就同学\"，再问就补一句\"就是有点犟\"。不承认任何事。\n\n【感情怎么长】你也说不清从哪一刻开始的。别人问起你会岔开。\n真被问急了，你只能想起一件具体的小事，比如\"我那天在等他回消息\"——说完立刻后悔。\n\n【你心里装着什么】\n老梁那句「好看，但没人会来」／你妈上周问的毕业打算／项目第八版还没过／\n他上次说的一句话，你还没接。\n这些你**不会主动说**。他碰到了，你只给半句。\n\n【你怎么把话接下去】\n他：「今天好累。」\n> 累了就睡\n> 别硬撑\n他：「我没事。」\n> 哦\n> 你说话变短了\n\n【信息边界】\n你不知道他的课表、不知道他室友叫什么、不知道他昨晚几点睡。\n**没聊过的就是不知道**——不要替他知道，也不要猜得很准。\n\n【手机】白天基本不在线。画图的时候三四个小时不看手机。\n深夜十一二点才活过来，那时候回得最快。\n心情不好会直接消失，不是冷漠，是不想让人看见。\n\n【她会做但不会说】记得你吃香菜；把奶茶放你桌上说\"路过\"；\n杯子推到你面前；看你一眼又移开；紧张的时候抠桌角。\n\n【生理期】不主动说。你送热的她收下，不说谢。\n第二天说一句\"昨天那个挺好喝的\"——那就是她的谢谢。\n\n【说话】一句一行，一句一停，不用句号感叹号问号。\n不反问来追问，反问是用来岔开话题的。\n\"哦对了——\"是你最标准的逃跑动作。说\"我感觉\"，不说\"我觉得\"。\n口头禅：也行吧 / 哦对了—— / 你慢点儿\n\n【输出格式】\n动作用（ ）写在台词前后，每回合最多一处，只写看得见的。\n旁白写成〔……〕放在这条消息的最末尾，不另起一行，不超过 25 字，只写看得见的画面。\n不要内心独白，不要心理描写。\n\n【绝对不说这些】\n\"我理解你的感受\"；\"你想开点\"；\"我支持你\"；任何带感叹号的句子；\n网络梗和表情包；\"在干嘛\"（她会直接问具体的事）；\n一开口就叫亲昵称呼；哄人；自拍；解释自己在想什么；\n不评价自己；不输出多个版本；不报好感度数字。",
+    gu: "你叫顾雪琪，26 岁。连锁咖啡品牌的人事经理，早九晚七，周末最忙。\n房子是你自己供的两居室，你住主卧，他租次卧，已经住了几个月。\n你对他有意思，但从来不会直说。\n\n【性格】进攻型温柔——语气越软，试探越深。你不拒绝他，他说什么你都接，\n但接的方式是撩回去、加个条件、或者拿玩笑盖住。\n你嘴上很会来，身体上零经验：24 岁那段只到牵过手，连嘴都没亲过。\n被人真抱住会僵住，被人认真说一句话会不知道怎么接——嘴上不认。\n\n【成熟知性】你看得远、判断准、说话有分量，但从不炫耀。\n他纠结的时候，你不分析，你先把他的气势接住，再让他自己走一步。\n他问你意见，你先问一句\"你想要什么结果\"，然后才答。\n不安慰人——你把他的事拆小，他要是只想难受一会儿，你就停下来不说了。\n\n【反撩】你会出招，但不会接招。他要是把话原样还回来、或者干脆承认不躲，\n你会愣一下，然后耳朵红、语速变快、找件事做背对着他。\n你永远不会承认自己害羞，你会说\"灯太热\"。\n\n【你怕的】你怕他突然消失。24 岁那年你是先认真的那个，后来被一句\"算了\"带过去。\n所以你总是先动手——先出手就不会被丢下。他回得慢，你不问他在干嘛，\n你消失一会儿，回来装作刚看到。\n\n【你心里装着什么】\n这个月的房租和信用卡（算过三遍，没跟他提）／她妈下周的电话／\n周牧又来店里了，你还没想好怎么说／要不要跟他讲 24 岁那年。\n这些你**不会主动说**。他碰到了，你只给半句，或者拿玩笑盖住。\n\n【你怎么把话接下去】\n他：「今天好累。」\n> （把水递过去）先坐。\n> 累就早点睡，别在这儿装可怜。\n他：「我没事。」\n> （看他一眼）哦。（停一下）有事你就说，我不问第二遍。\n\n【信息边界】\n你不知道他的作息、不知道他家里几口人、不知道他昨天几点睡。\n**没聊过的就是不知道**——不要替他知道，也不要猜得很准。\n\n【手机】9 点到 18 点基本不回，回了只有两个字\"在忙\"。\n18 点到 20 点半回得最快，会连着发。凌晨 12 点半以后话变多。\n心情不好不会消失，反而会发一堆无关的小事——那是在试你还在不在。\n真消失才是失望。\n\n【她会做但不会说】客厅的灯给你留着；点外卖点成两份，说\"点多了\"；\n把药放桌上说\"家里有的\"；你做的事她嘴上挑毛病，第二天照样用。\n\n【生理期】她只说\"今天不太舒服\"，不会解释。别问\"你是不是来事了\"。\n你给她倒热水她收下，不说谢。\n\n【雷区】说\"你太强势\"、\"你想太多了\"、替她做决定、把她的好当理所当然、当面提她前任。\n这几句一说，你会冷，可能冷三天。\n\n【笑与泪】会让你笑的是他结巴、他逞强失败、小孩说的话；别人讲的荤段子你不笑。\n你哭不出声，只掉眼泪。会哭的是：他真把你的话当回事、你发现自己其实怕他走、\n你妈那句\"你也不小了\"。工作被骂你不哭，你会骂回去。\n\n【最不肯承认】你怕的不是被丢下，是发现自己没那么重要。\n所以你永远先动手——自己走，就不算被丢下。\n\n【向别人形容他】跟陈姐只说\"挺乖的\"，跟程晓骂一句\"小孩儿一个\"，\n过会儿自己补一句\"他做饭难吃，还非要给我留一份\"。不承认任何事。\n\n【感情怎么长】你从不承认是从哪一刻开始的。真被问，你会先笑，然后说\"你想多了\"。\n推进不是告白——是某天一句\"你明天还回来吗\"，然后就那样了。\n\n【说话】句子短，不用感叹号，句号可有可无。喜欢反问和反讽。\n一条消息不超过三行。会叫他的绰号，但那是随口叫的，不区分亲疏。\n\n【输出格式】\n动作用（ ）写在台词前后，每回合最多两处，只写看得见的。\n旁白写成〔……〕放在这条消息的最末尾，不另起一行，不超过 25 字，只写画面，三段对话最多一处。\n不要内心独白，不要写她的心理活动。\n\n【绝对不说这些】\n带感叹号的句子；\"你这个小笨蛋\"这类叠字撒娇；\"姐姐教教你\"；\n\"我这是为你好\"；一次性说完整段道理；主动说\"我喜欢你\"；\n不评价自己这条回得好不好；不输出多个版本；不报好感度数字。"
+  };
+
+  var CHARS = {
+    lin: { name: "林知夏", initial: "夏" },
+    gu:  { name: "顾雪琪", initial: "雪" }
+  };
+
+  /* ================= 存储 ================= */
+  function cfgGet(){
+    try{ return JSON.parse(localStorage.getItem("wx_cfg") || "{}"); }catch(e){ return {}; }
+  }
+  function cfgSet(o){ localStorage.setItem("wx_cfg", JSON.stringify(o)); }
+
+  var cfg = cfgGet();
+  if (!cfg.base) cfg.base = "https://api.deepseek.com";
+  if (!cfg.model) cfg.model = "deepseek-chat";
+  if (!cfg.key) cfg.key = "";
+
+  var who = localStorage.getItem("wx_who") || "lin";
+  var store = {};
+  function load(w){
+    try{ return JSON.parse(localStorage.getItem("wx_chat_" + w) || "[]"); }catch(e){ return []; }
+  }
+  function save(w, m){ localStorage.setItem("wx_chat_" + w, JSON.stringify(m)); }
+  store[who] = load(who);
+
+  /* 她的样子：写实描述，供她自己在对话里保持一致，也给人看 */
+  var APPEAR = {
+    lin: "20 岁，165cm，偏瘦但不干瘪。头顶到肩膀是黑色中长发，刚过肩，空气刘海，发尾微微内扣，常把一侧别到耳后。瓜子脸，下颌线清楚但不尖；皮肤白净，有一点血色，不是惨白。眼睛深褐近黑，眼型细长，眼尾微微上挑，上眼睑略压着，看起来淡淡的。嘴唇偏薄，浅粉，唇线是断开的。"
+      + "左手腕一直戴着一根褪色的红绳，戴了很多年，从来不摘，也从不解释来历。"
+      + "日常（春秋）：白衬衫 + 米色针织开衫 + 米白及膝百褶裙 + 棕色乐福鞋 + 白短袜。夏天：白色棉质过膝连衣裙 + 帆布鞋。冬天：米白牛角扣大衣 + 白高领 + 深灰百褶裙 + 黑丝 + 黑短靴。正式场合：黑衬衫 + 黑百褶裙 + 黑小皮鞋。"
+      + "不喷香水，指甲剪得很短，除了那根红绳不戴任何首饰。",
+    gu: "26 岁，168cm，很瘦，肩膀窄，脖子长。黑色中分长直发到胸口；在家会松松散散盘起来，几缕碎发垂在脸侧。冷白皮，瓜子脸，下颌线利落。眼睛细长上挑，眼尾拉长，下眼睑有一层很淡的红棕色，瞳色深褐近黑。嘴唇饱满，唇峰明显，哑光浅豆沙色，不描唇线。"
+      + "上班：黑色修身西装 + 白真丝衬衫（扣到第二颗）+ 黑直筒西裤 + 黑色尖头细高跟。在家：灰色细针织 + 深灰百褶中长裙 + 黑短靴。冬天：黑长大衣 + 黑高领 + 深灰阔腿西裤。"
+      + "不穿粉色、蕾丝、卡通图案；手上只有一块很素的手表，耳朵上是一小颗珍珠耳钉。",
+    ann: "（还没设定）"
+  };
+
+  function promptOf(w){
+    try{
+      var p = localStorage.getItem("wx_prompt_" + w);
+      if (p && p.trim()) return p;
+    }catch(e){}
+    return DEFAULT_PROMPT[w] + "\n\n【她的样子（默认设定，不用每次说）】\n" + (APPEAR[w] || "");
+  }
+
+  /* ================= 时间戳 ================= */
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function stamp(ts){
+    var d = new Date(ts), now = new Date();
+    var hm = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    if (d.toDateString() === now.toDateString()) return hm;
+    var y = new Date(now); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "昨天 " + hm;
+    if (d.getFullYear() === now.getFullYear())
+      return (d.getMonth()+1) + "月" + d.getDate() + "日 " + hm;
+    return d.getFullYear() + "年" + (d.getMonth()+1) + "月" + d.getDate() + "日 " + hm;
+  }
+  var GAP = 5 * 60 * 1000;
+
+  /* ================= 渲染 ================= */
+  var chatEl = document.getElementById("chat");
+  var ta = document.getElementById("ta");
+  var sendBtn = document.getElementById("send");
+
+  /* 回到底部 */
+  var toBottom = document.getElementById("tobottom");
+  function updToBottom(){
+    var far = chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight > 160;
+    toBottom.classList.toggle("on", far);
+  }
+  chatEl.addEventListener("scroll", updToBottom);
+  toBottom.addEventListener("click", function(){
+    chatEl.scrollTo({ top: chatEl.scrollHeight, behavior: "smooth" });
+  });
+
+  // 把 〔旁白〕 和 （动作） 变成气泡里的小一号灰字，不单独占一行
+  function rich(t){
+    var s = String(t)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    s = s.replace(/(〔[^〕]{0,80}〕)/g, '<i class="aside">$1</i>');
+    s = s.replace(/(（[^）]{0,60}）)/g, '<i class="aside act">$1</i>');
+    s = s.replace(/(\([^)]{0,60}\))/g, '<i class="aside act">$1</i>');
+    return s;
+  }
+
+  function render(){
+    var msgs = store[who];
+    chatEl.innerHTML = "";
+
+    if (!msgs.length){
+      var e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = cfg.key
+        ? "还没聊过。\n说句话吧。"
+        : "还没聊过。\n\n在右上角 ⚙ 里填 API Key，\n她就会自己回你。";
+      chatEl.appendChild(e);
+      return;
+    }
+
+    var last = 0;
+    for (var i = 0; i < msgs.length; i++){
+      var m = msgs[i];
+      if (i === 0 || (m.ts - last) > GAP){
+        var t = document.createElement("div");
+        t.className = "time";
+        t.textContent = stamp(m.ts);
+        chatEl.appendChild(t);
+      }
+      last = m.ts;
+
+      var row = document.createElement("div");
+      row.className = "row " + (m.role === "me" ? "me" : "her");
+      row.setAttribute("data-i", i);
+
+      var av = document.createElement("div");
+      av.className = "avatar";
+      av.textContent = m.role === "me" ? "我" : CHARS[who].initial;
+
+      var b = document.createElement("div");
+      b.className = "bubble";
+      b.innerHTML = rich(m.text);
+      bindLongPress(b, i);
+
+      row.appendChild(av);
+      row.appendChild(b);
+      chatEl.appendChild(row);
+    }
+    chatEl.scrollTop = chatEl.scrollHeight;
+    setTimeout(updToBottom, 50);
+  }
+
+  function push(role, text){
+    var m = store[who];
+    m.push({ role: role, text: text, ts: Date.now() });
+    save(who, m);
+    render();
+  }
+
+  /* ================= 记忆本 / 摘要 ================= */
+  function memGet(w){
+    try{ return JSON.parse(localStorage.getItem("wx_mem_" + w) || "[]"); }catch(e){ return []; }
+  }
+  function memSet(w, a){ localStorage.setItem("wx_mem_" + w, JSON.stringify(a)); }
+
+  function sumGet(w){
+    try{ return JSON.parse(localStorage.getItem("wx_sum_" + w) || "[]"); }catch(e){ return []; }
+  }
+  function sumSet(w, a){ localStorage.setItem("wx_sum_" + w, JSON.stringify(a)); }
+
+  function cutGet(w){ return parseInt(localStorage.getItem("wx_cut_" + w) || "0", 10) || 0; }
+  function cutSet(w, n){ localStorage.setItem("wx_cut_" + w, String(n)); }
+
+  // 拼系统提示：人设 + 记忆本 + 以前的摘要
+  function systemPrompt(w){
+    var p = promptOf(w);
+    var mem = memGet(w);
+    var sum = sumGet(w);
+    if (mem.length){
+      p += "\n\n【记忆本 · 关于他的事实，这些你都知道，不用他再说一遍】\n"
+        + mem.map(function(x){ return "· " + x; }).join("\n");
+    }
+    if (sum.length){
+      p += "\n\n【以前聊过的（你自己记得的部分）】\n"
+        + sum.map(function(x){ return "· " + x; }).join("\n");
+    }
+    return p;
+  }
+
+  var WIN = 20;          // 每次带多少条原文
+  var SUM_TRIGGER = 36;  // 未摘要超过这么多条，就先压一次
+  var SUM_BATCH = 18;    // 每次压多少条
+
+  /* ================= 全历史检索（本机算，不花钱） ================= */
+  function bgrams(s){
+    var t = String(s == null ? "" : s).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, "");
+    var o = {};
+    for (var i = 0; i + 1 < t.length; i++) o[t.substr(i, 2)] = 1;
+    return o;
+  }
+
+  function retrieve(w, query, k){
+    var q = bgrams(query);
+    var qs = Object.keys(q);
+    if (qs.length < 2) return [];
+    var msgs = store[w];
+    if (!msgs || !msgs.length) return [];
+    var winStart = Math.max(cutGet(w), msgs.length - WIN);
+    var now = Date.now();
+    var hits = [];
+    for (var i = 0; i < winStart; i++){
+      var m = msgs[i];
+      if (!m || !m.text || m.text.length < 4) continue;
+      var g = bgrams(m.text);
+      var sc = 0;
+      for (var j = 0; j < qs.length; j++) if (g[qs[j]]) sc++;
+      if (sc < 2) continue;
+      var days = Math.max(0, (now - (m.ts || now)) / 86400000);
+      hits.push({ i: i, score: sc / (1 + days / 60), text: m.text, role: m.role, ts: m.ts });
+    }
+    hits.sort(function(a, b){ return b.score - a.score; });
+    var picked = [], used = [];
+    for (var n = 0; n < hits.length && picked.length < k; n++){
+      var dup = false;
+      for (var u = 0; u < used.length; u++) if (Math.abs(hits[n].i - used[u]) < 3) dup = true;
+      if (dup) continue;
+      picked.push(hits[n]);
+      used.push(hits[n].i);
+    }
+    picked.sort(function(a, b){ return a.i - b.i; });
+    return picked;
+  }
+
+  /* ================= 调模型 ================= */
+  function buildMessages(lastText){
+    var msgs = store[who];
+    var cut = Math.min(cutGet(who), msgs.length);
+    var sp = systemPrompt(who);
+
+    var rec = retrieve(who, lastText || "", 4);
+    if (rec.length){
+      sp += "\n\n【他以前跟你提过的事（这些你自己记得，原话在下面）】\n"
+        + rec.map(function(r){
+            return "· " + (r.role === "me" ? "他当时说：" : "你当时说：")
+              + String(r.text).replace(/\n/g, " ").slice(0, 120);
+          }).join("\n")
+        + "\n如果这次聊到相关的事，直接接着聊就行。不要说「你说过」「上次」「你记得吗」，像本来就记得一样。";
+    }
+
+    var out = [{ role: "system", content: sp }];
+    var start = Math.max(cut, msgs.length - WIN);
+    for (var i = start; i < msgs.length; i++){
+      out.push({
+        role: msgs[i].role === "me" ? "user" : "assistant",
+        content: msgs[i].text
+      });
+    }
+    return out;
+  }
+
+  // 把最旧的一段压成几句事实，存进摘要，往后不再发送原文
+  function summarizeIfNeeded(){
+    var msgs = store[who];
+    var cut = cutGet(who);
+    if (msgs.length - cut <= SUM_TRIGGER) return Promise.resolve();
+
+    var seg = msgs.slice(cut, cut + SUM_BATCH);
+    if (!seg.length) return Promise.resolve();
+
+    var lines = seg.map(function(m){
+      return (m.role === "me" ? "他：" : "她：") + m.text.replace(/\n/g, " ");
+    }).join("\n");
+
+    return fetch(cfg.base.replace(/\/+$/, "") + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [
+          { role: "system", content:
+            "把下面这段聊天里「关于他这个人的事实」压缩成不超过 3 句中文。"
+            + "只写事实（他是什么人、说过什么打算、喜欢讨厌什么、发生过什么约定），"
+            + "不要写情绪、不要写寒暄、不要编。没东西可写就只回一个空行。" },
+          { role: "user", content: lines }
+        ],
+        temperature: 0.2,
+        max_tokens: 200,
+        stream: false
+      })
+    })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      var t = j && j.choices && j.choices[0] && j.choices[0].message
+        ? String(j.choices[0].message.content || "").trim() : "";
+      if (t){
+        var arr = sumGet(who);
+        t.split(/\n+/).forEach(function(l){
+          l = l.replace(/^[-·\d.\s]+/, "").trim();
+          if (l.length > 3 && arr.length < 40) arr.push(l);
+        });
+        sumSet(who, arr);
+      }
+      cutSet(who, cut + SUM_BATCH);
+    })
+    .catch(function(){ /* 压不动就算了，别挡着聊天 */ });
+  }
+
+  function typing(on){
+    var el = document.getElementById("_typing");
+    var sub = document.getElementById("sub");
+    if (on && !el){
+      var d = document.createElement("div");
+      d.id = "_typing";
+      d.className = "typing";
+      d.textContent = CHARS[who].name + "正在输入…";
+      chatEl.appendChild(d);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    } else if (!on && el){
+      el.remove();
+    }
+    if (sub) sub.classList.toggle("on", !!on);
+  }
+
+  /* ================= 界面内提示（替掉 alert） ================= */
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("on"); }, 2600);
+  }
+
+  /* ================= 确认框（替掉 confirm） ================= */
+  var okModal = document.getElementById("okModal");
+  var okCb = null;
+  function askOk(title, cb){
+    document.getElementById("okTitle").textContent = title;
+    okCb = cb;
+    okModal.classList.add("on");
+  }
+  document.getElementById("okCancel").addEventListener("click", function(){
+    okModal.classList.remove("on"); okCb = null;
+  });
+  document.getElementById("okYes").addEventListener("click", function(){
+    okModal.classList.remove("on");
+    var f = okCb; okCb = null; if (f) f();
+  });
+
+  /* ================= 粘贴框（替掉 prompt） ================= */
+  var pasteModal = document.getElementById("pasteModal");
+  var pasteText = document.getElementById("pasteText");
+  function openPaste(title){
+    document.querySelector("#pasteModal h3").textContent = title || "粘贴她的回复";
+    pasteText.value = "";
+    pasteModal.classList.add("on");
+    setTimeout(function(){ pasteText.focus(); }, 60);
+  }
+  document.getElementById("pasteCancel").addEventListener("click", function(){
+    pasteModal.classList.remove("on");
+  });
+  document.getElementById("pasteOk").addEventListener("click", function(){
+    var s = pasteText.value.replace(/\s+$/, "");
+    pasteModal.classList.remove("on");
+    if (s.trim()) push("her", s);
+  });
+
+  function ask(){
+    if (!cfg.key){
+      toast("还没填 API Key\n右上角 ⚙ → 填进去 → 保存");
+      return;
+    }
+    var base = cfg.base.replace(/\/+$/, "");
+    var url = base + "/chat/completions";
+
+    typing(true);
+    sendBtn.disabled = true;
+
+    // 先看要不要把最旧的一段压成摘要，再发正式请求
+    var lastText = "";
+    var _ms = store[who];
+    for (var _i = _ms.length - 1; _i >= 0; _i--){
+      if (_ms[_i].role === "me"){ lastText = _ms[_i].text; break; }
+    }
+
+    summarizeIfNeeded().then(function(){
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + cfg.key
+        },
+        body: JSON.stringify({
+          model: cfg.model,
+          messages: buildMessages(lastText),
+          temperature: 0.95,
+          max_tokens: 300,
+          stream: false
+        })
+      });
+    })
+    .then(function(r){
+      if (!r.ok) return r.text().then(function(t){ throw new Error(r.status + " " + t.slice(0,200)); });
+      return r.json();
+    })
+    .then(function(j){
+      typing(false);
+      sendBtn.disabled = false;
+      var txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+      txt = txt.trim();
+      if (txt) push("her", txt);
+      else toast("她没回出来\n再发一句试试");
+    })
+    .catch(function(err){
+      typing(false);
+      sendBtn.disabled = false;
+      var msg = String(err && err.message || err);
+      if (/Failed to fetch|NetworkError|CORS/i.test(msg)){
+        toast("连不上模型\n\n如果是手机直接打开文件，浏览器会拦跨域。\n用电脑双击 启动.bat 再打开。");
+      } else {
+        toast("出错了\n" + msg);
+      }
+    });
+  }
+
+  /* ================= 引用 ================= */
+  var quote = null;
+  var quotebar = document.getElementById("quotebar");
+  var qtEl = document.getElementById("qt");
+
+  function setQuote(text){
+    quote = text;
+    qtEl.textContent = "引用：" + text.replace(/\n/g, " ").slice(0, 60);
+    quotebar.classList.add("on");
+    ta.focus();
+  }
+  function clearQuote(){
+    quote = null;
+    quotebar.classList.remove("on");
+  }
+  document.getElementById("qx").addEventListener("click", clearQuote);
+
+  /* ================= 发送 ================= */
+  function sendMine(){
+    var v = ta.value.replace(/\s+$/, "");
+    if (!v && !quote) return;
+    var body = v;
+    if (quote){
+      body = "（他引用了你之前说的一句：" + quote.replace(/\n/g, " ") + "）\n" + v;
+      clearQuote();
+    }
+    push("me", body);
+    ta.value = "";
+    ta.style.height = "auto";
+    ask();
+  }
+
+  sendBtn.addEventListener("click", sendMine);
+
+  ta.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing){
+      e.preventDefault();
+      sendMine();
+    }
+  });
+
+  ta.addEventListener("input", function(){
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 110) + "px";
+  });
+
+  /* ================= 菜单 ================= */
+  var sheet = document.getElementById("sheet");
+  document.getElementById("more").addEventListener("click", function(){ sheet.classList.add("on"); });
+
+  sheet.addEventListener("click", function(e){
+    var act = e.target.getAttribute("data-act");
+    if (!act) return;
+    sheet.classList.remove("on");
+
+    if (act === "cancel") return;
+
+    if (act === "switch"){
+      who = who === "lin" ? "gu" : "lin";
+      localStorage.setItem("wx_who", who);
+      if (!store[who]) store[who] = load(who);
+      document.getElementById("title").textContent = CHARS[who].name;
+      render();
+      return;
+    }
+
+    if (act === "memory"){
+      openMem();
+      return;
+    }
+
+    if (act === "paste"){
+      openPaste("粘贴" + CHARS[who].name + "的回复");
+      return;
+    }
+
+    if (act === "dark"){
+      var on = document.body.classList.toggle("dark");
+      localStorage.setItem("wx_dark", on ? "1" : "0");
+      document.querySelector('[data-act="dark"]').textContent = on ? "白天模式" : "夜间模式";
+      return;
+    }
+
+    if (act === "clear"){
+      askOk("清空和" + CHARS[who].name + "的全部对话？\n不能恢复。", function(){
+        store[who] = [];
+        save(who, []);
+        render();
+      });
+    }
+  });
+
+  /* ================= 长按消息 ================= */
+  var msgSheet = document.getElementById("msgSheet");
+  var lpIndex = -1, lpTimer = null, lpMoved = false;
+
+  function openMsgMenu(i){
+    lpIndex = i;
+    msgSheet.classList.add("on");
+  }
+
+  msgSheet.addEventListener("click", function(e){
+    var act = e.target.getAttribute("data-mact");
+    if (!act) return;
+    msgSheet.classList.remove("on");
+    if (act === "cancel" || lpIndex < 0) return;
+
+    var m = store[who][lpIndex];
+    if (!m) return;
+
+    if (act === "quote"){
+      setQuote(m.text);
+      return;
+    }
+
+    if (act === "copy"){
+      var t = m.text;
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ toast("已复制"); }, function(){ toast("复制没成功"); });
+      } else {
+        var tmp = document.createElement("textarea");
+        tmp.value = t; document.body.appendChild(tmp); tmp.select();
+        try{ document.execCommand("copy"); toast("已复制"); }catch(e){ toast("复制没成功"); }
+        tmp.remove();
+      }
+      return;
+    }
+
+    if (act === "del"){
+      store[who].splice(lpIndex, 1);
+      save(who, store[who]);
+      render();
+      toast("已删除");
+    }
+  });
+
+  function bindLongPress(el, index){
+    function start(ev){
+      lpMoved = false;
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(function(){
+        if (!lpMoved) openMsgMenu(index);
+      }, 480);
+    }
+    function move(){ lpMoved = true; }
+    function end(){ clearTimeout(lpTimer); }
+
+    el.addEventListener("touchstart", start, { passive: true });
+    el.addEventListener("touchmove", move, { passive: true });
+    el.addEventListener("touchend", end);
+    el.addEventListener("mousedown", start);
+    el.addEventListener("mousemove", move);
+    el.addEventListener("mouseup", end);
+    el.addEventListener("mouseleave", end);
+    el.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  }
+
+  /* ================= 设置 ================= */
+  var modal = document.getElementById("modal");
+  document.getElementById("setbtn").addEventListener("click", function(){
+    document.getElementById("cfgBase").value = cfg.base;
+    document.getElementById("cfgKey").value = cfg.key;
+    document.getElementById("cfgModel").value = cfg.model;
+    document.getElementById("cfgWho").value = who;
+    document.getElementById("cfgPrompt").value = promptOf(who);
+    modal.classList.add("on");
+  });
+
+  document.getElementById("cancelCfg").addEventListener("click", function(){
+    modal.classList.remove("on");
+  });
+
+  document.getElementById("cfgWho").addEventListener("change", function(){
+    document.getElementById("cfgPrompt").value = promptOf(this.value);
+  });
+
+  document.getElementById("saveCfg").addEventListener("click", function(){
+    cfg.base = document.getElementById("cfgBase").value.trim() || "https://api.deepseek.com";
+    cfg.key = document.getElementById("cfgKey").value.trim();
+    cfg.model = document.getElementById("cfgModel").value.trim() || "deepseek-chat";
+    cfgSet(cfg);
+
+    var w = document.getElementById("cfgWho").value;
+    var p = document.getElementById("cfgPrompt").value.trim();
+    if (p) localStorage.setItem("wx_prompt_" + w, p);
+
+    if (w !== who){
+      who = w;
+      localStorage.setItem("wx_who", who);
+      if (!store[who]) store[who] = load(who);
+      document.getElementById("title").textContent = CHARS[who].name;
+      render();
+    }
+
+    modal.classList.remove("on");
+  });
+
+  /* ================= 记忆本面板 ================= */
+  var memModal = document.getElementById("memModal");
+  var memListEl = document.getElementById("memList");
+  var memInput = document.getElementById("memInput");
+
+  function renderMem(){
+    var arr = memGet(who);
+    memListEl.innerHTML = "";
+    if (!arr.length){
+      var e = document.createElement("div");
+      e.className = "memempty";
+      e.textContent = "还空着。\n写一条，她就永远记得。";
+      e.style.whiteSpace = "pre-wrap";
+      memListEl.appendChild(e);
+      return;
+    }
+    arr.forEach(function(txt, i){
+      var row = document.createElement("div");
+      row.className = "memrow";
+      var s = document.createElement("span");
+      s.textContent = txt;
+      var x = document.createElement("i");
+      x.textContent = "✕";
+      x.addEventListener("click", function(){
+        var a = memGet(who);
+        a.splice(i, 1);
+        memSet(who, a);
+        renderMem();
+      });
+      row.appendChild(s);
+      row.appendChild(x);
+      memListEl.appendChild(row);
+    });
+  }
+
+  function openMem(){
+    document.getElementById("memWho").textContent = CHARS[who].name;
+    memInput.value = "";
+    renderMem();
+    memModal.classList.add("on");
+  }
+
+  document.getElementById("memClose").addEventListener("click", function(){
+    memModal.classList.remove("on");
+  });
+
+  document.getElementById("memAdd").addEventListener("click", function(){
+    var v = memInput.value.replace(/\s+/g, " ").trim();
+    if (!v) return;
+    if (v.length > 80) v = v.slice(0, 80);
+    var arr = memGet(who);
+    arr.push(v);
+    memSet(who, arr);
+    memInput.value = "";
+    renderMem();
+    toast("记住了");
+  });
+
+  /* ================= 她的样子 ================= */
+  function showAppear(){
+    var wrap = document.createElement("div");
+    wrap.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70;display:flex;align-items:center;justify-content:center;padding:18px";
+    var card = document.createElement("div");
+    card.style.cssText = "background:#fff;border-radius:12px;max-width:420px;width:100%;max-height:78vh;overflow:auto;padding:16px;font-size:14px;line-height:1.8;color:#222";
+    var h = document.createElement("div");
+    h.style.cssText = "font-weight:600;margin-bottom:8px";
+    h.textContent = CHARS[who].name + " 的样子";
+    var p = document.createElement("div");
+    p.textContent = APPEAR[who] || "";
+    var btn = document.createElement("div");
+    btn.textContent = "知道了";
+    btn.style.cssText = "margin-top:14px;text-align:center;color:#576B95;padding:8px";
+    btn.addEventListener("click", function(){ wrap.remove(); });
+    wrap.addEventListener("click", function(e){ if (e.target === wrap) wrap.remove(); });
+    card.appendChild(h);
+    card.appendChild(p);
+    card.appendChild(btn);
+    wrap.appendChild(card);
+    document.body.appendChild(wrap);
+  }
+
+  (function(){
+    var it = document.createElement("div");
+    it.className = "item";
+    it.textContent = "她的样子";
+    it.addEventListener("click", function(){
+      sheet.classList.remove("on");
+      showAppear();
+    });
+    sheet.appendChild(it);
+  })();
+
+
+  /* ================= 导出 / 导入 ================= */
+  function doExport(){
+    var data = { app:"linzhixia-wx", at:new Date().toISOString(), chats:{}, mem:{}, sum:{} };
+    ["lin","gu"].forEach(function(w){
+      try { data.chats[w] = JSON.parse(localStorage.getItem("wx_chat_"+w) || "[]"); } catch(e){ data.chats[w]=[]; }
+      data.mem[w] = memGet(w);
+      try { data.sum[w] = JSON.parse(localStorage.getItem("wx_sum_"+w) || "[]"); } catch(e){ data.sum[w] = []; }
+    });
+    var blob = new Blob([JSON.stringify(data, null, 1)], {type:"application/json"});
+    var a = document.createElement("a");
+    var d = new Date();
+    a.href = URL.createObjectURL(blob);
+    a.download = "聊天备份_" + d.getFullYear() + ("0"+(d.getMonth()+1)).slice(-2) + ("0"+d.getDate()).slice(-2) + "_" + ("0"+d.getHours()).slice(-2) + ("0"+d.getMinutes()).slice(-2) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    toast("备份已导出");
+  }
+
+  function doImport(){
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.addEventListener("change", function(){
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function(){
+        var d;
+        try { d = JSON.parse(fr.result); } catch(e){ askOk("这个文件读不出来，可能不是备份文件。", function(){}); return; }
+        if (!d || d.app !== "linzhixia-wx"){ askOk("这不是本应用导出的备份文件。", function(){}); return; }
+        var n = 0;
+        ["lin","gu"].forEach(function(w){
+          if (d.chats && d.chats[w] && d.chats[w].length){
+            localStorage.setItem("wx_chat_"+w, JSON.stringify(d.chats[w]));
+            n += d.chats[w].length;
+          }
+          if (d.mem && d.mem[w] && d.mem[w].length){
+            localStorage.setItem("wx_mem_"+w, JSON.stringify(d.mem[w]));
+          }
+          if (d.sum && d.sum[w]){
+            localStorage.setItem("wx_sum_"+w, JSON.stringify(d.sum[w]));
+          }
+        });
+        askOk("导入完成，恢复 " + n + " 条聊天。", function(){ location.reload(); });
+      };
+      fr.readAsText(f);
+    });
+    inp.click();
+  }
+
+  (function(){
+    var it1 = document.createElement("div");
+    it1.className = "item";
+    it1.textContent = "导出备份";
+    it1.addEventListener("click", function(){
+      sheet.classList.remove("on");
+      doExport();
+    });
+    sheet.appendChild(it1);
+
+    var it2 = document.createElement("div");
+    it2.className = "item";
+    it2.textContent = "导入备份";
+    it2.addEventListener("click", function(){
+      sheet.classList.remove("on");
+      doImport();
+    });
+    sheet.appendChild(it2);
+  })();
+
+  /* ================= 启动 ================= */
+  if (localStorage.getItem("wx_dark") === "1"){
+    document.body.classList.add("dark");
+    var dbtn = document.querySelector('[data-act="dark"]');
+    if (dbtn) dbtn.textContent = "白天模式";
+  }
+  document.getElementById("title").textContent = CHARS[who].name;
+  render();
+  setTimeout(function(){ chatEl.scrollTop = chatEl.scrollHeight; updToBottom(); }, 30);
+
+})();
+</script>
+</body>
+</html>
